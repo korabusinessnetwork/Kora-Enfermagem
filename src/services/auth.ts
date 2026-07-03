@@ -1,4 +1,4 @@
-import { AuthError } from '@supabase/supabase-js';
+import { AuthError, FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { IUser } from '../types';
 
@@ -38,17 +38,67 @@ export async function fetchUserProfile(userId: string): Promise<IUser> {
   return data as IUser;
 }
 
-export async function login(email: string, password: string): Promise<IUser> {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(translateAuthError(error));
-  if (!data.user) throw new Error('Algo deu errado. Contate suporte.');
+interface LoginFunctionResponse {
+  access_token?: string;
+  refresh_token?: string;
+  error?: string;
+  message?: string;
+  remainingAttempts?: number;
+}
 
-  const profile = await fetchUserProfile(data.user.id);
+export async function login(email: string, password: string): Promise<IUser> {
+  // O login passa por uma Edge Function (não supabase.auth.signInWithPassword direto)
+  // para aplicar rate limiting server-side: 5 tentativas falhas / 10min por email,
+  // contadas em Postgres. Ver supabase/functions/login.
+  //
+  // supabase.functions.invoke() só popula `data` em respostas 2xx. Em erro (400/429/500)
+  // ele joga tudo em `error` como FunctionsHttpError, e o corpo real (com a mensagem
+  // e remainingAttempts) fica em error.context, que é a Response bruta — precisa
+  // parsear manualmente.
+  const { data, error: invokeError } = await supabase.functions.invoke<LoginFunctionResponse>(
+    'login',
+    { body: { email, password } },
+  );
+
+  let result: LoginFunctionResponse | null = data;
+
+  if (invokeError) {
+    if (invokeError instanceof FunctionsHttpError) {
+      result = await invokeError.context.json().catch(() => null);
+    } else {
+      throw new Error('Algo deu errado. Contate suporte.');
+    }
+  }
+
+  if (!result) throw new Error('Algo deu errado. Contate suporte.');
+
+  if (result.message) {
+    // Bloqueado por rate limit (429): a function retorna a mensagem já pronta.
+    throw new Error(result.message);
+  }
+
+  if (result.error || !result.access_token || !result.refresh_token) {
+    const base = result.error?.toLowerCase().includes('invalid') ? errorMessages.invalid_credentials
+      : result.error?.toLowerCase().includes('confirm') ? errorMessages.email_not_confirmed
+      : 'Algo deu errado. Contate suporte.';
+    const suffix = typeof result.remainingAttempts === 'number' && result.remainingAttempts > 0
+      ? ` Restam ${result.remainingAttempts} tentativa(s) antes do bloqueio temporário.`
+      : '';
+    throw new Error(base + suffix);
+  }
+
+  const { error: sessionError, data: sessionData } = await supabase.auth.setSession({
+    access_token: result.access_token,
+    refresh_token: result.refresh_token,
+  });
+  if (sessionError || !sessionData.user) throw new Error('Algo deu errado. Contate suporte.');
+
+  const profile = await fetchUserProfile(sessionData.user.id);
 
   await supabase
     .from('users')
     .update({ last_login: new Date().toISOString() })
-    .eq('id', data.user.id);
+    .eq('id', sessionData.user.id);
 
   await logAudit(profile.id, profile.hospital_id, 'login');
 
