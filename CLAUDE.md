@@ -10,6 +10,28 @@
 
 ---
 
+## ⚠️ Cláusula Obrigatória: Testar Antes de Prosseguir
+
+**Toda mudança de código, migration, function ou configuração DEVE ser testada antes de seguir para o próximo passo.** Não é permitido empilhar funcionalidades sobre algo não verificado.
+
+```
+Aplica-se a:
+├─ Migrations SQL          → rodar e confirmar tabelas/policies criadas (query direta)
+├─ Edge Functions          → invocar (curl, trigger, etc) e checar resultado/logs/tabela
+├─ Componentes React       → rodar no browser (npm run dev) e exercitar o fluxo
+├─ Integrações externas    → validar credenciais/resposta real (Stripe, Supabase)
+├─ Webhooks                → disparar evento de teste e confirmar efeito no banco
+└─ Scripts/config          → rodar e confirmar saída esperada, sem erros
+
+Regra:
+├─ Nunca assumir que "deve funcionar" — comprovar com execução real
+├─ Se o teste falhar, corrigir e retestar antes de continuar
+├─ Se não for possível testar (ex: falta ambiente), declarar isso explicitamente
+└─ Só reportar uma etapa como concluída depois de validada
+```
+
+---
+
 ## 🏗️ Estrutura do Projeto
 
 ```

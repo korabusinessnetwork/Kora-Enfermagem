@@ -69,7 +69,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 1. Acesse [supabase.com/dashboard](https://supabase.com/dashboard)
 2. Clique em "New Project"
 3. Preencha:
-   - **Name:** `escala-enfermagem`
+   - **Name:** `Kora-Enfermagem`
    - **Database Password:** gere uma senha forte (salve em lugar seguro!)
    - **Region:** `South America (São Paulo)` ou próxima
    - **Pricing Plan:** `Free` (ok para MVP)
@@ -94,7 +94,7 @@ npx supabase login
 # Vai abrir navegador, faça login
 
 # Link seu projeto
-npx supabase link --project-ref seu-project-ref
+npx supabase link --project-ref https://ksqquqeambutavkfduur.supabase.co
 # Encontre seu-project-ref na URL do Supabase dashboard
 
 # Push schema (cria todas as tabelas)
