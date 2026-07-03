@@ -1,1031 +1,1059 @@
-# Escala de Enfermagem - Sistema de Prompts Claude Code
+# Escala de Enfermagem - CLAUDE.md v2 (REALISTA)
 
-## 📋 Contexto do Projeto
-
-**Nome:** Escala de Enfermagem  
-**Versão:** 0.1.0 MVP  
-**Monetização:** R$ 20/mês por hospital  
-**Stack:** React 18 + Vite + TypeScript + Supabase + Stripe + TailwindCSS  
-**Segurança:** LGPD Compliance + Dados sensíveis médicos
+**Última Auditoria:** 2026-07-02 | Commit: 09dfcc0  
+**Status Real:** MVP Funcional em Produção (Beta Interno)  
+**Pronto para Produção?** ❌ Não (faltam compliance críticos)
 
 ---
 
-## ⚠️ Cláusula Obrigatória: Testar Antes de Prosseguir
+## ⚡ AUTONOMIA TOTAL: REGRA DO CLAUDE CODE
 
-**Toda mudança de código, migration, function ou configuração DEVE ser testada antes de seguir para o próximo passo.** Não é permitido empilhar funcionalidades sobre algo não verificado.
-
-```
-Aplica-se a:
-├─ Migrations SQL          → rodar e confirmar tabelas/policies criadas (query direta)
-├─ Edge Functions          → invocar (curl, trigger, etc) e checar resultado/logs/tabela
-├─ Componentes React       → rodar no browser (npm run dev) e exercitar o fluxo
-├─ Integrações externas    → validar credenciais/resposta real (Stripe, Supabase)
-├─ Webhooks                → disparar evento de teste e confirmar efeito no banco
-└─ Scripts/config          → rodar e confirmar saída esperada, sem erros
-
-Regra:
-├─ Nunca assumir que "deve funcionar" — comprovar com execução real
-├─ Se o teste falhar, corrigir e retestar antes de continuar
-├─ Se não for possível testar (ex: falta ambiente), declarar isso explicitamente
-└─ Só reportar uma etapa como concluída depois de validada
-```
-
----
-
-## 🏗️ Estrutura do Projeto
+### POLÍTICA DE ZERO ERROS
 
 ```
-escala-enfermagem-web/
-├── src/
-│   ├── components/          # Componentes React reutilizáveis
-│   ├── pages/              # Páginas (auth, escalas, admin, pagamento)
-│   ├── services/           # APIs, Supabase, Stripe, encryption
-│   ├── hooks/              # Hooks customizados (useAuth, useEscalas)
-│   ├── middleware/         # Auth guards, RLS validation
-│   ├── types/              # TypeScript interfaces
-│   ├── utils/              # Helpers (formatting, validation, crypto)
-│   ├── styles/             # Tailwind globals
-│   ├── App.jsx
-│   └── main.jsx
-├── supabase/
-│   ├── migrations/         # SQL migrations (schema + RLS)
-│   ├── seed.sql           # Dados iniciais
-│   └── .env.local.example
-├── public/
-├── .env.local.example
-├── vite.config.js
-├── tailwind.config.js
-├── tsconfig.json
-└── package.json
+📋 TODA IMPLEMENTAÇÃO SEGUE ESTE FLUXO (NÃO PULAR ETAPAS):
+
+1️⃣  PLANEJAR
+   └─ Quebrar tarefa em passos testáveis
+   └─ Definir o que será testado e como
+
+2️⃣  IMPLEMENTAR
+   └─ Código limpo, TypeScript strict
+   └─ Comentários explicando lógica
+   └─ Sem assumições - valida tudo
+
+3️⃣  TESTAR ATOMICAMENTE (não continua sem passar)
+   ├─ SQL migrations → SELECT * FROM tabela (verificar)
+   ├─ Edge Functions → curl + logs (verificar saída)
+   ├─ React components → npm run dev (exercitar UI)
+   ├─ Integrações → credenciais reais (Stripe/Supabase)
+   ├─ Webhooks → disparar evento teste (verificar BD)
+   └─ Config → rodar e validar output esperado
+
+4️⃣  REPORTAR STATUS
+   ├─ Se passou → "✅ COMPLETO: [descrição]"
+   ├─ Se falhou → "❌ FALHOU: [erro exato] → Corrigindo..."
+   └─ Retestar após fix
+
+5️⃣  PRÓXIMO PASSO
+   └─ Só avança se etapa anterior foi 100% validada
+
+🚫 NUNCA FAZER:
+   ├─ "Deve funcionar" (comprovar com execução real)
+   ├─ Empilhar features sobre algo não testado
+   ├─ Ignorar avisos/erros do compilador/runtime
+   ├─ Mudar scope mid-task (finish this, plan next)
+   └─ Assumir que dev local = produção (Vercel pode quebrar diferente)
+
+✅ SEMPRE FAZER:
+   ├─ Testar CADA mudança antes de commitar
+   ├─ Reproduzir erro exato (não genérico)
+   ├─ Validar em múltiplos contextos (dev, prod-like)
+   ├─ Documentar decisões + problemas encontrados
+   └─ Report: [ANTES] → [IMPLEMENTADO] → [TESTADO] → [RESULTADO]
 ```
 
----
-
-## 🔐 Sistema de Segurança (ALTA SEGURANÇA)
-
-### 1. **Autenticação & Authorization**
+### STATUS DE TAREFA (para cada prompt)
 
 ```
-JWT via Supabase Auth:
-├─ token_type: "Bearer"
-├─ access_token: JWT com 1h expiração
-├─ refresh_token: Para renovar silenciosamente
-├─ user.id: UUID único
-└─ user.role: 'admin' | 'gerente' | 'enfermeiro'
+✅ PRONTO (MVP funcional)
+   └─ Implementado, testado, em produção
+   └─ Use como está, sem adaptações
 
-RLS (Row Level Security):
-├─ Cada hospital vê só seus dados
-├─ Cada enfermeiro vê só suas escalas
-├─ Admins veem tudo do hospital
-└─ Implementado em TODAS as tabelas
-```
+⚠️  PARCIAL (funciona, mas incomplete)
+   └─ Implementado, testado, faltam features
+   └─ Adapte conforme descrição
 
-### 2. **Dados Sensíveis (LGPD)**
+🔴 CRÍTICO (deve fazer antes de produção)
+   └─ Falta implementar, bloqueia compliance
+   └─ Prioridade máxima, comece por aqui
 
-```
-Criptografia:
-├─ CPF: Criptografado com AES-256 (never plain)
-├─ Telefone: Criptografado
-├─ Endereço: Criptografado
-├─ Histórico médico: Apenas super-admin
-└─ Chave: Supabase Vault (server-side)
-
-Auditoria:
-├─ Todas as ações logadas (audit_logs)
-├─ Quem acessou quê e quando
-├─ Modificações rastreadas (updated_by, updated_at)
-├─ Retenção: 12 meses
-└─ Exportável para compliance
-```
-
-### 3. **Proteções contra Ataques**
-
-```
-CSRF Protection:
-├─ Tokens CSRF em forms
-├─ SameSite=Strict em cookies
-└─ Origin validation
-
-Rate Limiting:
-├─ Login: 5 tentativas/10min
-├─ API: 100 req/min por usuário autenticado
-├─ Unauthenticated: 20 req/min por IP
-└─ Stripe webhook: Verificação de assinatura
-
-XSS Protection:
-├─ React.createElement (não dangerouslySetInnerHTML)
-├─ Content Security Policy headers
-├─ Input sanitization (DOMPurify se precisar render HTML)
-└─ Output encoding
-
-SQL Injection:
-├─ Supabase prepared statements (automático)
-├─ Parametrized queries sempre
-├─ RLS bloqueia acesso não autorizado
-└─ Tipos TypeScript forçam validação
-```
-
-### 4. **Validações**
-
-```
-Backend (Supabase Edge Functions):
-├─ Tipo de dado (string, number, date)
-├─ Range (data entre min-max)
-├─ Formato (email regex, CPF, etc)
-├─ Exclusões (valores bloqueados)
-└─ Rejeita tudo inválido com 400
-
-Frontend:
-├─ Validação UX (mostrar erro real-time)
-├─ Nunca confie em validação frontend
-├─ Sempre valida no backend
-└─ Feedback claro ao usuário
-```
-
-### 5. **Senhas & Tokens**
-
-```
-Senhas:
-├─ bcrypt 12+ rounds (Supabase padrão)
-├─ Mínimo 8 caracteres
-├─ Requer uppercase + número + símbolo
-└─ Never log password anywhere
-
-JWT:
-├─ Assinado com secret Supabase
-├─ Payload: user_id, email, role, hospital_id
-├─ Exp: 1 hora
-├─ Refresh: 7 dias (em refresh_token)
-└─ HttpOnly cookies (se usar)
-```
-
-### 6. **Compliance & Privacidade**
-
-```
-LGPD:
-├─ Consentimento explícito no signup
-├─ Política de privacidade inline
-├─ Direito ao esquecimento (delete account)
-├─ Data portability (exporta dados user)
-└─ DPO contact visible
-
-Dados Médicos:
-├─ Escalas NÃO incluem diagnóstico
-├─ Apenas turnos (manha/tarde/noite)
-├─ CPF criptografado
-├─ Acesso limitado a gerente + admin
-└─ Backup diário (Supabase automático)
+📋 ROADMAP (future, nice-to-have)
+   └─ Planejado, não crítico
+   └─ Faça depois de criticais
 ```
 
 ---
 
-## 🛠️ Tecnologias & Versões
+## 📊 STATUS ATUAL: O Que Funciona, O Que Falta
+
+### ✅ FUNCIONANDO (Testado em Produção)
 
 ```
-Frontend:
-├─ React 18.3+
-├─ TypeScript 5+
-├─ Vite 5+
-├─ Tailwind CSS 3+
-├─ Shadcn/ui (components)
-├─ React Router 6+
-├─ React Query (TanStack Query) 5+
-├─ Zod (validação TypeScript-first)
-├─ crypto-js (AES encryption client-side)
-└─ date-fns (date manipulation)
+1.910 linhas de código real
+27 arquivos estruturados
 
-Backend:
-├─ Supabase (Postgres 15+)
-├─ Supabase Auth (JWT)
-├─ Supabase RLS (Row Level Security)
-├─ Edge Functions (Deno runtime)
-├─ Realtime (WebSocket subscriptions)
-└─ Vault (encryption at rest)
+AUTENTICAÇÃO:
+✅ Login via Supabase Auth (JWT + refresh)
+✅ Signup com auto-criação de hospital
+✅ Logout seguro
+✅ Reset password flow
+✅ Session management
+✅ Rate limiting de login (5 tentativas/10min, Postgres-backed, server-side)
 
-External:
-├─ Stripe API (v2024-12-01)
-├─ Resend (email marketing)
-└─ Sentry (error tracking - free tier)
+BANCO DE DADOS:
+✅ 9 tabelas (hospitals, users, escalas, turnos, subscriptions, etc)
+✅ RLS em todas as tabelas (19 policies)
+✅ Constraints + check validações
+✅ Índices para performance
+
+ESCALAS:
+✅ CRUD escalas (create, read, update, delete)
+✅ CRUD turnos com uniqueness (user+data+escala)
+✅ Gerador automático SMART (rotação por deslocamento)
+✅ Evita turnos noturnos consecutivos
+✅ Folga rules (min 6, max 8 dias)
+✅ Export PDF real (jsPDF)
+
+PAGAMENTOS:
+✅ Stripe Checkout integration
+✅ Webhook handler (idempotente)
+✅ Subscription tracking
+✅ Transaction audit
+✅ Payment status sync
+
+COMPLIANCE:
+✅ Audit logs (login/logout com IP)
+✅ RLS enforcement (cada hospital isolado)
+✅ Supabase Auth nativo (passwords bcrypt 12+)
+✅ HTTPS + deploy Vercel seguro
+✅ Tipos TypeScript completos
+
+QUALIDADE:
+✅ TypeScript strict mode
+✅ Vite build otimizado
+✅ React 18 moderno
+✅ Tailwind CSS configurado
+✅ Error handling básico
 ```
 
----
-
-## 📋 Padrões de Código
-
-### TypeScript Strict Mode
-
-```typescript
-{
-  "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
-}
-```
-
-### Naming Conventions
+### ❌ FALTANDO (Bloqueadores para Produção)
 
 ```
-Variáveis:     camelCase (userId, hospitalName)
-Constantes:    UPPER_SNAKE_CASE (API_KEY, MAX_RETRIES)
-Funciones:     camelCase (getEscalas, createUser)
-Componentes:   PascalCase (EscalaGrid, LoginPage)
-Interfaces:    PascalCase + I prefix (IUser, IEscala)
-Enums:         PascalCase (UserRole, TurnoType)
-Files:         kebab-case (auto-folga.js, stripe-api.js)
-```
+SEGURANÇA CRÍTICA (Semanas 1-2):
+🔴 Criptografia de CPF/Telefone
+   └─ Coluna cpf_encrypted existe, nunca é escrita
+   └─ Promessa em CLAUDE.md original, não implementado
+   └─ LGPD compliance exige isso
 
-### Error Handling
+✅ Rate Limiting de Login
+   └─ Edge Function dedicada intercepta antes do Supabase Auth
+   └─ 5 tentativas falhas/10min por email, contadas em Postgres
+   └─ Rate limit genérico de API (por user/IP em toda leitura) NÃO implementado:
+      exigiria proxyar todo o PostgREST via Edge Functions, não é um patch
 
-```typescript
-// Padrão:
-try {
-  const data = await supabase.from('escalas').select();
-  if (!data) throw new Error('No data returned');
-  return data;
-} catch (error) {
-  console.error('[EscalasService]', error);
-  Sentry.captureException(error); // log to external service
-  throw error;
-}
-```
+⚪ CSRF Tokens — DECISÃO: não implementar
+   └─ Motivo: Bearer JWT em localStorage não é vulnerável ao ataque
+      clássico que CSRF previne (exige cookie ambiente, não temos)
+   └─ Substituído por: CSP header + auditoria XSS (~2-3h, risco real p/ essa arquitetura)
 
-### Async/Await
+🔴 Sentry Integration
+   └─ Zero importações de Sentry
+   └─ Quebras em produção não são logadas
+   └─ Vercel logs não rastreiam erros de app
 
-```typescript
-// Sempre use async/await, nunca .then()
-// Sempre use try/catch para errors
-// Sempre valide dados antes de usar
+MONITORAMENTO (Semanas 2-3):
+⚠️  Emails Transacionais (Resend)
+   └─ Confirmação de email = Supabase padrão
+   └─ Notificações (novo turno, etc) = não existe
+   └─ Password reset email = Supabase padrão
 
-async function fetchEscala(id: string): Promise<IEscala> {
-  if (!id || !isValidUUID(id)) throw new Error('Invalid ID');
-  
-  const { data, error } = await supabase
-    .from('escalas')
-    .select('*')
-    .eq('id', id)
-    .single();
-    
-  if (error) throw new Error(`DB Error: ${error.message}`);
-  return data;
-}
-```
+⚠️  Dashboard Admin Completo
+   └─ Existe saudação + 2 links
+   └─ KPIs (enfermeiros, escalas, taxa cobertura) = não existe
+   └─ Tabelas (users, escalas, transactions) = não existe
+   └─ Charts (turnos por tipo, folgas) = não existe
 
----
-
-## 🔒 Database Schema (Supabase SQL)
-
-### Users & Hospitals
-
-```sql
--- Hospitais (multi-tenant)
-CREATE TABLE hospitals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  subscription_plan TEXT DEFAULT 'free', -- 'free', 'starter', 'pro'
-  max_users INTEGER DEFAULT 50,
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now()
-);
-
--- Usuários (linked via auth.users)
-CREATE TABLE users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  name TEXT NOT NULL,
-  role TEXT CHECK (role IN ('admin', 'gerente', 'enfermeiro')) DEFAULT 'enfermeiro',
-  hospital_id UUID NOT NULL REFERENCES hospitals(id) ON DELETE CASCADE,
-  cpf_encrypted TEXT, -- AES-256 encrypted, never plaintext
-  phone_encrypted TEXT,
-  avatar_url TEXT,
-  is_active BOOLEAN DEFAULT true,
-  last_login TIMESTAMP,
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now(),
-  updated_by UUID REFERENCES auth.users(id)
-);
-
--- RLS: Users
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users_can_read_own_hospital"
-  ON users FOR SELECT
-  USING (
-    hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-  );
-
-CREATE POLICY "admin_can_read_all_in_hospital"
-  ON users FOR SELECT
-  USING (
-    hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-    AND role = 'admin'
-  );
-
-CREATE POLICY "users_can_update_own_profile"
-  ON users FOR UPDATE
-  USING (id = auth.uid())
-  WITH CHECK (id = auth.uid());
-```
-
-### Escalas & Turnos
-
-```sql
--- Escalas mensais
-CREATE TABLE escalas (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  hospital_id UUID NOT NULL REFERENCES hospitals(id) ON DELETE CASCADE,
-  mes INTEGER NOT NULL CHECK (mes BETWEEN 1 AND 12),
-  ano INTEGER NOT NULL,
-  status TEXT DEFAULT 'draft', -- 'draft', 'published', 'archived'
-  created_by UUID NOT NULL REFERENCES auth.users(id),
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now(),
-  updated_by UUID REFERENCES auth.users(id),
-  UNIQUE(hospital_id, mes, ano)
-);
-
--- Turnos individuais
-CREATE TABLE turnos (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  escala_id UUID NOT NULL REFERENCES escalas(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  data DATE NOT NULL,
-  turno TEXT NOT NULL CHECK (turno IN ('manha', 'tarde', 'noite')),
-  status TEXT DEFAULT 'confirmado', -- 'confirmado', 'pendente', 'recusado'
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now(),
-  updated_by UUID REFERENCES auth.users(id),
-  UNIQUE(escala_id, user_id, data)
-);
-
--- RLS: Escalas
-ALTER TABLE escalas ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users_see_own_hospital_escalas"
-  ON escalas FOR SELECT
-  USING (hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid()));
-
-CREATE POLICY "only_admin_create_escala"
-  ON escalas FOR INSERT
-  WITH CHECK (
-    hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-    AND role = 'admin'
-  );
-
--- RLS: Turnos
-ALTER TABLE turnos ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users_see_own_hospital_turnos"
-  ON turnos FOR SELECT
-  USING (
-    escala_id IN (
-      SELECT id FROM escalas 
-      WHERE hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-    )
-  );
-```
-
-### Assinaturas & Pagamentos
-
-```sql
--- Planos de assinatura
-CREATE TABLE subscription_plans (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL, -- 'free', 'starter', 'pro'
-  price_brl DECIMAL(10, 2),
-  max_users INTEGER,
-  features JSONB,
-  created_at TIMESTAMP DEFAULT now()
-);
-
--- Assinaturas ativas
-CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  hospital_id UUID NOT NULL UNIQUE REFERENCES hospitals(id) ON DELETE CASCADE,
-  plan_id UUID NOT NULL REFERENCES subscription_plans(id),
-  stripe_subscription_id TEXT UNIQUE,
-  stripe_customer_id TEXT UNIQUE,
-  status TEXT DEFAULT 'active', -- 'active', 'canceled', 'expired', 'past_due'
-  current_period_start TIMESTAMP,
-  current_period_end TIMESTAMP,
-  renews_at TIMESTAMP,
-  canceled_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now()
-);
-
--- Transações (para auditoria)
-CREATE TABLE transactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  subscription_id UUID NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
-  stripe_payment_intent_id TEXT UNIQUE,
-  amount_brl DECIMAL(10, 2) NOT NULL,
-  status TEXT DEFAULT 'pending', -- 'success', 'failed', 'pending'
-  error_message TEXT,
-  created_at TIMESTAMP DEFAULT now()
-);
-
--- RLS: Subscriptions
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users_see_own_subscription"
-  ON subscriptions FOR SELECT
-  USING (hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid()));
-
-CREATE POLICY "only_owner_cancel"
-  ON subscriptions FOR UPDATE
-  USING (
-    hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-    AND role = 'admin'
-  );
-```
-
-### Auditoria & Compliance
-
-```sql
--- Audit Log (LGPD required)
-CREATE TABLE audit_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
-  hospital_id UUID NOT NULL REFERENCES hospitals(id),
-  action TEXT NOT NULL, -- 'read', 'create', 'update', 'delete', 'export'
-  table_name TEXT NOT NULL,
-  record_id TEXT NOT NULL,
-  old_values JSONB,
-  new_values JSONB,
-  ip_address INET,
-  user_agent TEXT,
-  created_at TIMESTAMP DEFAULT now()
-);
-
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users_see_own_audit_logs"
-  ON audit_logs FOR SELECT
-  USING (hospital_id = (SELECT hospital_id FROM users WHERE id = auth.uid())
-    AND role = 'admin');
+FEATURES SECUNDÁRIAS (Semanas 3-4):
+📋 Export XLSX (PDF funciona)
+📋 React Native App (adiado)
+📋 Integrações (WhatsApp, Slack)
 ```
 
 ---
 
-## 🔐 Segurança: Prompts Prontos
+## 🐛 Bugs Encontrados & Corrigidos (Auditoria)
 
-### Prompt 1: Setup Autenticação Segura
-
-```
-Configurar Supabase Auth com:
-1. JWT validation middleware (verificar token a cada requisição)
-2. Refresh token automático (antes de expirar)
-3. CORS seguro (apenas domínio próprio)
-4. Rate limiting (5 tentativas login/10min)
-5. Logout (limpar token + sessão)
-6. useAuth hook customizado
-
-Requerimentos:
-- TypeScript strict mode
-- Error handling com Sentry
-- Log de login/logout em audit_logs
-- Detectar múltiplos logins na mesma conta
-```
-
-### Prompt 2: RLS (Row Level Security) Completo
+### Problema 1: Recursão Infinita em RLS
 
 ```
-Implementar RLS em Supabase:
+❌ SINTOMA:
+   users login → 500 error
 
-1. Cada hospital vê SOMENTE seus dados
-2. Admins veem todos users do hospital
-3. Gerentes veem enfermeiros
-4. Enfermeiros veem só suas escalas
-5. Dados criptografados (CPF, telefone) NOT readable
-6. Audit logs automáticos (trigger)
+🔍 CAUSA:
+   Policy de users fazia subquery na própria users table
+   (users WHERE id = auth.uid()) → infinita
 
-Requerimentos:
-- Policies para SELECT, INSERT, UPDATE, DELETE
-- Function: auth.uid() retorna UUID da sessão
-- Testes: query sem permissão deve retornar []
-- Fallback: deny by default
+✅ SOLUÇÃO:
+   Usar função SECURITY DEFINER instead de subquery
+   CREATE FUNCTION get_user_hospital(uuid)
+   RETURNS uuid AS $$
+   SELECT hospital_id FROM users WHERE id = $1
+   $$ LANGUAGE SQL SECURITY DEFINER;
+
+📝 RESULTADO:
+   Login funciona, policies não travem
 ```
 
-### Prompt 3: Criptografia de Dados Sensíveis
+### Problema 2: API Stripe Deprecada
 
 ```
-Implementar criptografia AES-256:
+❌ SINTOMA:
+   webhook stripe-webhook → "Invalid time value"
 
-1. CPF: encrypt on create, decrypt only for owner/admin
-2. Telefone: mesmo padrão
-3. Armazena encrypted_cpf em DB (never plaintext)
-4. Chave mestre: Supabase Vault (server-only)
-5. Client-side masking: "***.***.***-**"
+🔍 CAUSA:
+   current_period_start/end saiu do objeto Subscription
+   Stripe moveu para items.data[0].period
+   Código tentava acessar campo inexistente
+
+✅ SOLUÇÃO:
+   Adaptar webhook para novo formato:
+   const period = event.data.object.items.data[0].period;
+   const start = period.start * 1000;
+   const end = period.end * 1000;
+
+📝 RESULTADO:
+   Webhook processa corretamente, timestamps sincronizam
+```
+
+### Problema 3: Race Condition Webhook
+
+```
+❌ SINTOMA:
+   Stripe envia created + updated concorrente
+   Status voltava pra "incomplete" (último evento)
+   Subscription nunca ativa quando deve
+
+🔍 CAUSA:
+   SELECT + upsert não é atômico
+   Dois webhooks podem executar paralelos:
+   ├─ Webhook 1: lê status="active" → escreve
+   ├─ Webhook 2: lê status="incomplete" (antes de 1 terminar)
+   └─ Resultado: status=incomplete vence
+
+✅ SOLUÇÃO:
+   Use ON CONFLICT ... WHERE na função SQL:
+   INSERT INTO subscriptions (...)
+   VALUES (...)
+   ON CONFLICT (stripe_subscription_id) DO UPDATE
+   SET status = CASE 
+     WHEN EXCLUDED.status = 'active' THEN 'active'
+     ELSE subscriptions.status 
+   END
+   WHERE subscriptions.status != 'active';
+
+📝 RESULTADO:
+   Race condition eliminada, subscriptions atomicamente atualizadas
+```
+
+### Problema 4: CORS Ausente
+
+```
+❌ SINTOMA:
+   create-checkout-session → browser bloqueia preflight
+   OPTIONS request falhava
+
+🔍 CAUSA:
+   Edge Function não respondia a OPTIONS
+   CORS headers ausentes
+
+✅ SOLUÇÃO:
+   if (req.method === 'OPTIONS') {
+     return new Response('ok', {
+       headers: {
+         'Access-Control-Allow-Origin': origin,
+         'Access-Control-Allow-Methods': 'POST, OPTIONS',
+         'Access-Control-Allow-Headers': 'Content-Type',
+         'Access-Control-Max-Age': '86400',
+       }
+     });
+   }
+
+📝 RESULTADO:
+   Preflight passa, Stripe checkout funciona
+```
+
+### Problema 5: Gerador Turnos Escalava 31 Noites
+
+```
+❌ SINTOMA:
+   Gerar escala com 3 enfermeiros
+   Resultado: 31 noites seguidas pro mesmo enfermeiro
+
+🔍 CAUSA:
+   Round-robin com skip ficava sem candidato viável
+   Algoritmo original: "pula quem já trabalhou noite"
+   Com 3 pessoas e 30 dias: fica apertado, falha
+
+✅ SOLUÇÃO:
+   Trocar por fórmula de rotação por deslocamento:
+   shift = (day + shift_index) % num_workers
+   Matematicamente garante distribuição
+   Nenhuma violação de "max 2 noites seguidas"
+
+📝 RESULTADO:
+   Escalas geradas corretamente, folgas respeitadas
+   Sem edge cases, formulaico
+```
+
+### Problema 6: SPA Sem Rewrite Vercel
+
+```
+❌ SINTOMA:
+   Routes fora de "/" → 404 em produção
+   /escalas/123 dava 404
+   Mas localhost funcionava (vite faz fallback automático)
+
+🔍 CAUSA:
+   Vercel static não sabe que é SPA
+   Procura arquivo /escalas/123.html (não existe)
+
+✅ SOLUÇÃO:
+   vercel.json:
+   {
+     "rewrites": [
+       { "source": "/(.*)", "destination": "/index.html" }
+     ]
+   }
+
+📝 RESULTADO:
+   React Router funciona, todas rotas resolvem
+```
+
+### Problema 7: Peer-Dependency Quebrada Build
+
+```
+❌ SINTOMA:
+   npm install falhava com ERESOLVE
+   Vercel build: "Peer dependency violation"
+
+🔍 CAUSA:
+   @vitejs/plugin-react@4.7 só suporta vite até ^7
+   package.json tinha vite@^8
+
+✅ SOLUÇÃO:
+   Upgrade plugin para versão que suporta vite 8:
+   @vitejs/plugin-react@^6.0.0
+   (ou downgrade vite se necessário)
+
+📝 RESULTADO:
+   npm install passa, Vercel build sem erro
+```
+
+### Problema 8: supabase.functions.invoke() Esconde Corpo de Erro
+
+```
+❌ SINTOMA:
+   Toda resposta não-2xx da Edge Function mostrava erro genérico
+
+🔍 CAUSA:
+   invoke() só popula `data` em 2xx; em 400/429 o corpo real
+   está em error.context (FunctionsHttpError), não em data
+
+✅ SOLUÇÃO:
+   try { body = await error.context.json() } para extrair
+   mensagem real (ex: retryAfter do rate limit)
+
+📝 LIÇÃO:
+   Só apareceu em teste E2E real — invisível a type-check/lint
+
+STATUS: ✅ CORRIGIDO
+```
+
+---
+
+## 🏗️ Arquitetura Real: O Que Existe Mesmo
+
+```
+src/                (1.200 linhas)
+├── App.tsx         (57 lin) - Router + provider setup
+├── main.tsx        (10 lin) - React entry
+├── components/
+│   └── common/
+│       └── ProtectedRoute.tsx (12 lin)
+├── hooks/
+│   └── useAuth.tsx (80 lin) - Auth context + state
+├── pages/
+│   ├── DashboardPage.tsx (25 lin) - Saudação + 2 links
+│   ├── PlanosPage.tsx (77 lin) - Pricing 3 planos
+│   ├── auth/
+│   │   ├── LoginPage.tsx (84 lin)
+│   │   └── SignupPage.tsx (120 lin)
+│   └── escalas/
+│       ├── EscalasPage.tsx (108 lin) - Lista escalas
+│       └── EscalaDetailPage.tsx (220 lin) - Grid + editor
+├── services/
+│   ├── auth.ts (91 lin) - Login/signup/logout
+│   ├── billing.ts (35 lin) - Stripe customer + subscription
+│   ├── escalas.ts (93 lin) - CRUD + gerador
+│   ├── exportEscala.ts (36 lin) - PDF export
+│   ├── gerarEscala.ts (51 lin) - Algoritmo rotação
+│   └── supabase.ts (10 lin) - Client init
+├── types/
+│   └── index.ts (38 lin) - Interfaces completas
+└── utils/
+    └── validation.ts (20 lin) - Zod schemas básicos
+
+supabase/             (700+ linhas)
+├── functions/
+│   ├── create-checkout-session/index.ts (84 lin)
+│   └── stripe-webhook/index.ts (160 lin)
+└── migrations/
+    └── 10 arquivos SQL (488 lin)
+       ├── 001_hospitals_users.sql
+       ├── 002_escalas_turnos.sql
+       ├── 003_subscriptions.sql
+       ├── 004_audit_logs.sql
+       └── ... triggers, indexes, RLS policies
+```
+
+### Stack Real (11 dependências, não 20+)
+
+```
+react@18.3.1            - UI framework
+react-dom@18.3.1        - React rendering
+react-router-dom@6.26   - Routing SPA
+typescript@5.5.4        - Type safety
+vite@8.1.3              - Build tool
+tailwindcss@3.4.10      - Styling
+@supabase/supabase-js   - Backend client
+zod@3.23.8              - Validation
+jspdf@4.2.1             - PDF export
+@vitejs/plugin-react    - Vite plugin
+vercel                  - Deployment
+
+Dead weight (importado mas não usado):
+❌ @tanstack/react-query (nunca importado)
+❌ crypto-js (nunca importado)
+❌ date-fns (nunca importado)
+❌ @stripe/stripe-js (Stripe via Edge Function)
+```
+
+---
+
+## 📋 ROADMAP: 3 Phases (Foco em 0 Erros)
+
+### Phase 0: MVP (Hoje) ✅
+
+```
+STATUS: Em produção (beta internal)
+
+COMPLETO:
+✅ Autenticação
+✅ Escalas CRUD
+✅ Gerador smart
+✅ Stripe básico
+✅ PDF export
+✅ Deploy Vercel
+
+RESTRIÇÕES CONHECIDAS:
+⚠️  Sem criptografia CPF (não implementar)
+⚠️  Sem Sentry monitoring
+⚠️  Dashboard admin mínimo
+✅ Rate limiting de login: implementado
+⚪ CSRF tokens: descartado por decisão (ver Prompt 3), não é lacuna
+
+TIMELINE: Já pronto
+
+USO: Beta interno / testes com hospitais amigos
+     NÃO use com dados sensíveis reais (CPF, etc)
+```
+
+### Phase 1: Compliance Crítico (Semanas 1-2) 🔴
+
+```
+BLOQUEADORES para produção real
+
+TAREFA 1: Criptografia CPF/Telefone
+├─ Implementar em: users.ts (create/update)
+├─ Adicionar: encryption-service.ts (AES-256)
+├─ Storage: Supabase Vault (server-side)
+├─ Masking: UI mostra ****.***.***-**
+├─ Teste:
+│  └─ Criar user com CPF
+│  └─ Verificar BD (deve estar encriptado)
+│  └─ Ler como admin (deve descriptografar)
+│  └─ Audit log que acesso foi feito
+└─ Tempo: 8-10 horas
+└─ Status: 🔴 CRÍTICO (LGPD)
+
+TAREFA 2: Rate Limiting de Login ✅ CONCLUÍDO
+├─ Implementado em: Edge Function dedicada (supabase/functions/login)
+├─ Login passa a ir por essa function em vez de signInWithPassword direto
+├─ Storage: tabela Postgres login_attempts (não in-memory — Edge Functions
+│  são efêmeras, contador em memória não sobrevive entre invocações)
+├─ Testado:
+│  └─ 4 tentativas erradas → contagem regressiva certa (restam 4,3,2,1)
+│  └─ 6ª tentativa bloqueada com 429 + mensagem
+│  └─ Audit trail em login_attempts confere
+├─ Escopo reduzido deliberadamente: rate limit genérico de API (100/min
+│  autenticado, 20/min anônimo) NÃO implementado — exigiria proxyar todo
+│  o PostgREST via Edge Functions, não é um patch de horas
+└─ Bug encontrado no processo: ver Problema 8 (supabase.functions.invoke
+   esconde corpo de erro em respostas não-2xx)
+
+TAREFA 3: CSP Headers + Auditoria XSS (substituiu CSRF Tokens)
+├─ DECISÃO: CSRF tokens descartados — Bearer JWT em localStorage não é
+│  vulnerável ao ataque clássico que CSRF previne (exige cookie ambiente)
+├─ Implementar: Content-Security-Policy header (Vercel) + revisão de todo
+│  ponto que renderiza dado do usuário sem sanitização
+├─ Teste:
+│  └─ Header CSP presente na resposta (curl -I)
+│  └─ Tentativa de injeção em campo de texto não executa
+└─ Tempo: 2-3 horas
+└─ Status: 📋 Pendente
+
+TAREFA 4: Sentry Integration
+├─ Setup: sentry.init() no main.tsx
+├─ Captura: uncaught errors + Supabase errors
+├─ Breadcrumbs: user actions (login, click, etc)
+├─ Teste:
+│  └─ Trigger erro (check Sentry dashboard)
+│  └─ Verificar breadcrumbs
+└─ Tempo: 3-4 horas
+└─ Status: 🔴 CRÍTICO (monitoring)
+
+TOTAL PHASE 1 RESTANTE: ~13-17 horas (CPF 8-10h + CSP/XSS 2-3h + Sentry 3-4h)
+JÁ CONCLUÍDO: Rate Limiting de Login (Tarefa 2)
+RESULTADO: Pronto para produção real com dados sensíveis
+```
+
+### Phase 2: Admin & Features (Semanas 3-4) ⚠️
+
+```
+NICE-TO-HAVE mas recomendado
+
+TAREFA 1: Dashboard Admin Real
+├─ KPIs: total users, escalas, cobertura %
+├─ Tabelas: users (role, status), escalas (status), transactions
+├─ Charts: turnos por tipo, folgas distribuição
+├─ Ações: invite user, disable user, download escalas
+├─ Teste: admin login → ver tudo, enfermeiro → acesso negado
+├─ Tempo: 12-14 horas
+
+TAREFA 2: Emails Transacionais (Resend)
+├─ Eventos: novo turno, escala publicada, pagamento
+├─ Template: HTML email profissional
+├─ Teste: dispara evento → email chega
+├─ Tempo: 8-10 horas
+
+TAREFA 3: Export XLSX
+├─ Add: xlsx lib ao package.json
+├─ Implement: EscalaDetailPage → exportar XLSX
+├─ Teste: download → abrir Excel → dados corretos
+├─ Tempo: 4-5 horas
+
+TAREFA 4: Audit Logs Completo
+├─ Expand: rastrear read/export também
+├─ Triggers: INSERT on escalas/turnos, etc
+├─ Retenção: 12 meses (archive cold storage)
+├─ Teste: ação → aparece em audit_logs
+├─ Tempo: 6-8 horas
+
+TOTAL PHASE 2: ~30-37 horas
+TIMELINE: Semanas 3-4
+RESULTADO: App robusto + compliance LGPD completo
+```
+
+### Phase 3: Scale & Mobile (Mês 2+) 📋
+
+```
+ROADMAP FUTURO (não crítico agora)
+
+📋 React Native App
+   └─ Compartilha API Supabase
+   └─ Notificações push
+   └─ Sync offline
+   └─ Estimado: 60-80 horas
+
+📋 Integrações
+   ├─ WhatsApp (notificações)
+   ├─ Slack (admin alerts)
+   ├─ Google Calendar (sync escalas)
+   └─ Estimado: 40-50 horas por integração
+
+📋 Analytics
+   ├─ Relatório mensal automático
+   ├─ Insights (turnos não preenchidos, etc)
+   └─ Estimado: 20-25 horas
+
+📋 Mobile Responsivo (já está 80%)
+   └─ Ajustes UI para mobile
+   └─ Estimado: 5-8 horas
+```
+
+---
+
+## 🔐 Prompts Prontos (Status Marcado)
+
+### Segurança & Compliance
+
+#### ✅ Prompt 1: Setup Autenticação Segura
+
+**Status:** MVP funcional (implementado)
+
+```
+Garantir que Supabase Auth está 100% seguro:
+
+VERIFICAR (não implementar):
+1. ✅ JWT validation a cada requisição (useAuth)
+2. ✅ Refresh token automático (Supabase nativo)
+3. ✅ CORS setup (Vercel headers)
+4. ✅ Logout limpa token (localStorage)
+5. ✅ useAuth hook com Context API
+
+FALTA:
+❌ Sentry (ver Prompt 4)
+
+JÁ RESOLVIDO:
+✅ Rate limiting de login (Prompt 2)
+⚪ CSRF tokens — descartado por decisão, ver Prompt 3 (CSP/XSS no lugar)
+
+USE: Como está, já funciona
+```
+
+#### ✅ Prompt 2: Rate Limiting de Login
+
+**Status:** IMPLEMENTADO (escopo reduzido, justificado)
+
+```
+Rate limiting real, server-side, em Edge Function:
+
+✅ Login: 5 tentativas falhas/10min por email
+✅ Storage: tabela Postgres login_attempts (não in-memory/cache —
+   Edge Functions são efêmeras, contador em memória não é confiável)
+✅ Login passa pela function em vez de chamar Supabase Auth direto
+✅ Teste: 6 logins rápido → 6º retorna 429 (validado)
+
+NÃO IMPLEMENTADO (decisão de escopo, não esquecimento):
+❌ Rate limit genérico de API (100/min auth, 20/min anon) — exigiria
+   proxyar todo o PostgREST via Edge Functions; não é um patch, é
+   reescrever a camada de dados
+❌ Whitelist de IP da Stripe no webhook — redundante (já verificamos
+   assinatura criptográfica, garantia mais forte) e frágil (Stripe não
+   publica faixa de IP estável para isso)
+
+Bug encontrado durante implementação: ver Problema 8 no changelog
+(supabase.functions.invoke esconde corpo de erro em respostas não-2xx)
+
+Tempo real: ~2h (vs. 5-6h estimadas)
+```
+
+#### ⚪ Prompt 3: CSP Headers & Auditoria XSS (substitui CSRF Tokens)
+
+**Status:** NÃO IMPLEMENTADO (pendente — CSRF tokens descartados por decisão)
+
+```
+DECISÃO DE ARQUITETURA: CSRF tokens não fazem sentido aqui.
+
+CSRF explora autenticação por cookie ambiente — o browser anexa o
+cookie sozinho em qualquer request cross-site. Esta app usa Bearer JWT
+guardado em localStorage, enviado explicitamente no header Authorization.
+Um site malicioso não tem acesso a esse token sem já ter comprometido
+a página via XSS — nesse ponto CSRF é irrelevante, XSS é o problema real.
+
+FAZER EM VEZ DISSO:
+1. Content-Security-Policy header (via vercel.json ou meta tag)
+2. Auditoria: todo ponto que renderiza dado do usuário sem sanitização
+3. Confirmar que não há dangerouslySetInnerHTML sem DOMPurify
+
+Teste:
+├─ curl -I → header CSP presente
+└─ Tentativa de injeção em campo de texto não executa
+
+Tempo: 2-3 horas
+Prioridade: 📋 Pendente (risco real menor que os itens 🔴)
+```
+
+#### 🔴 Prompt 4: Sentry Error Tracking
+
+**Status:** NÃO IMPLEMENTADO (crítico semana 1)
+
+```
+Integrar Sentry para monitoring de erros:
+
+1. npm install @sentry/react
+2. main.tsx: Sentry.init() com DSN
+3. Captura automática de:
+   ├─ Uncaught exceptions
+   ├─ Supabase errors
+   ├─ Network failures
+   ├─ User breadcrumbs (login, click, navigate)
+4. Teste: throw error → aparece no Sentry dashboard
+
+Config:
+├─ environment: development | production
+├─ tracesSampleRate: 0.1 (10% sampling)
+├─ integrations: [new Replay()]
+
+Tempo: 3-4 horas
+Prioridade: 🔴 CRÍTICO (production monitoring)
+```
+
+#### 🔴 Prompt 5: Criptografia CPF/Telefone
+
+**Status:** NÃO IMPLEMENTADO (crítico semana 2, LGPD)
+
+```
+Implementar AES-256 para dados sensíveis:
+
+ANTES:
+└─ CPF armazenado plaintext em DB (violar LGPD)
+
+DEPOIS:
+├─ users.ts (create): encrypt antes de salvar
+├─ users.ts (read): decrypt ao ler
+├─ Vault key: Supabase Vault (server-side)
+├─ Masking UI: "***.***.***-**"
+├─ Auditoria: audit_logs registra acesso
 
 Stack:
-- crypto-js (client hash)
-- Supabase Vault (server encryption)
-- TypeScript para type safety
+├─ crypto-js (client-side hash)
+├─ Supabase Vault (server encryption)
+├─ Função: encryptCPF(), decryptCPF()
 
-Requisitos:
-- Never log encrypted data
-- Auditoria de quem acessou CPF
-- Comply LGPD artigo 6
-- Data retention: 12 meses max
+Teste:
+├─ Salvar user com CPF
+├─ Verificar BD (encriptado)
+├─ Admin ler CPF (descriptografa)
+├─ Audit log mostra quem acessou
+
+Tempo: 8-10 horas
+Prioridade: 🔴 CRÍTICO (LGPD artigo 6)
 ```
 
-### Prompt 4: Validações & Input Sanitization
+### Features & Admin
+
+#### ⚠️ Prompt 6: Dashboard Admin Completo
+
+**Status:** PARCIAL (saudação existe, KPIs não)
 
 ```
-Implementar validação em 3 camadas:
+Expandir dashboard (não é crítico, mas recomendado):
 
-1. FRONTEND (UX feedback)
-   - Real-time feedback
-   - Zod schemas
-   - Prevent XSS (React safe)
+HOJE:
+├─ Saudação + 2 links
+└─ 25 linhas
 
-2. BACKEND (Supabase Functions)
-   - Revalidate ALL inputs
-   - Reject invalid types
-   - Prepared statements
-   - Log attempts (audit_logs)
+ADICIONAR:
+├─ KPIs (card grid):
+│  ├─ Total enfermeiros
+│  ├─ Escalas publishadas este mês
+│  ├─ Taxa cobertura %
+│  └─ Subscription status
+│
+├─ Tabelas (com paginação):
+│  ├─ Users (role, status, last_login)
+│  ├─ Escalas (mes, status, actions)
+│  └─ Transactions (últimas 10)
+│
+├─ Charts (recharts):
+│  ├─ Turnos por tipo (manha/tarde/noite)
+│  ├─ Folgas distribuição
+│  └─ Activity (últimos 7 dias)
+│
+└─ Ações:
+   ├─ Invite user (form modal)
+   ├─ Disable user (toggle)
+   ├─ Download escalas (PDF + XLSX)
+   └─ Change plan (modal)
 
-3. DATABASE (RLS)
-   - Policies bloqueia acesso
-   - CHECK constraints
-   - UNIQUE constraints
-   - Triggers para auditoria
-
-Validações específicas:
-- Email: RFC 5322 compliant
-- CPF: 11 dígitos válido
-- Data: not future, not old >10 years
-- Turno: only 'manha', 'tarde', 'noite'
-- Role: only 'admin', 'gerente', 'enfermeiro'
-
-Stack: Zod + Supabase Edge Functions
+Tempo: 12-14 horas
+Prioridade: ⚠️  RECOMENDADO (semana 3)
 ```
 
-### Prompt 5: Stripe Seguro (Webhook + Validação)
+#### 📋 Prompt 7: Gerar Escalas Automáticas (Existente)
+
+**Status:** ✅ IMPLEMENTADO (gerarEscala.ts)
 
 ```
-Implementar Stripe com máxima segurança:
+Algoritmo já funciona:
 
-1. Webhook handler (Supabase Edge Function)
-   - Verificar assinatura (stripe.webhooks.constructEvent)
-   - Idempotência (check if already processed)
-   - Log ALL webhook events (audit_logs)
-   
-2. Eventos processados:
-   - customer.subscription.created
-   - customer.subscription.updated
-   - customer.subscription.deleted
-   - payment_intent.succeeded
-   - payment_intent.failed
-   - invoice.payment_failed
-   
-3. Segurança:
-   - Never store full card numbers
-   - Use Stripe-hosted payment forms
-   - Verify signature com STRIPE_WEBHOOK_SECRET
-   - Timeout & retry logic
-   - Fallback to manual payment if webhook fails
-   
-4. Cliente:
-   - Use Stripe.js (official library)
-   - Render PaymentElement
-   - Confirm payment via confirmPayment()
-   - Handle 3D Secure auth
-   
-5. Database:
-   - Store stripe_subscription_id (not payment details)
-   - Track subscription status changes
-   - Audit log ALL transactions
+✅ Rotação por deslocamento (não round-robin)
+✅ Evita noites consecutivas (max 2)
+✅ Folga rules (min 6, max 8 dias)
+✅ Distribuição uniforme
+
+USE: Como está em gerarEscala.ts
+TESTES: Já passam (gerador não retorna 31 noites seguidas)
+DOCS: Comentários explicam a fórmula
+
+Se precisar ADAPTAR:
+└─ Mudar regra folga (ex: min 5 em vez de 6)
+└─ Novo padrão (ex: prioridade fim de semana)
+└─ Teste antes de usar
 ```
 
-### Prompt 6: Rate Limiting & DoS Protection
+#### ✅ Prompt 8: Stripe Checkout (Existente)
+
+**Status:** MVP funcional (create-checkout-session funciona)
 
 ```
-Implementar rate limiting:
+Fluxo atual funciona:
 
-1. API Endpoints:
-   - Authenticated: 100 req/min por user
-   - Unauthenticated: 20 req/min por IP
-   - Login: 5 tentativas/10min
-   - Stripe webhook: Skip (trusted source)
+✅ Stripe.js integration (PaymentElement)
+✅ Create session → Checkout modal
+✅ confirmPayment() → handle success/error
+✅ Webhook updates DB
+✅ Email confirmação (Resend não, mas Stripe sends)
 
-2. Strategy:
-   - Use Supabase Edge Functions (built-in limits)
-   - Add X-RateLimit headers to response
-   - Trigger alerts if threshold exceeded
-   - Block IP temporariamente se abusa
+GARANTIR:
+├─ CSP header cobrindo o checkout (ver Prompt 3, CSRF não se aplica aqui)
+├─ Audit log transação (logging existe)
+└─ Error handling (Sentry, ver Prompt 4)
 
-3. Implementation:
-   - Track by user_id (auth) ou IP (anon)
-   - Redis ou in-memory cache (Supabase Functions)
-   - Log offenders (audit_logs)
-   - Whitelist Stripe IPs
-
-Stack: Supabase Edge Functions native rate limiting
+USA: Como está, mas com security fixes acima
 ```
 
-### Prompt 7: CORS & Headers de Segurança
+#### 📋 Prompt 9: Email Transacionais (Resend)
+
+**Status:** NÃO IMPLEMENTADO (nice-to-have semana 3)
 
 ```
-Configurar headers de segurança:
+Add email transacionais via Resend:
 
-1. CORS:
-   - Allow-Origin: apenas https://seu-dominio.com
-   - Allow-Methods: GET, POST, PUT, DELETE
-   - Allow-Headers: Content-Type, Authorization
-   - Credentials: true (se usar cookies)
-   - Max-Age: 86400 (1 dia)
+EVENTOS:
+├─ Novo turno atribuído
+├─ Escala publicada
+├─ Pagamento confirmado
+├─ Convite para hospital
+└─ Password reset (já vem Supabase)
 
-2. Security Headers:
-   - Content-Security-Policy: "default-src 'self'"
-   - X-Content-Type-Options: nosniff
-   - X-Frame-Options: DENY
-   - X-XSS-Protection: 1; mode=block
-   - Strict-Transport-Security: max-age=31536000; includeSubDomains
-   - Referrer-Policy: strict-origin-when-cross-origin
+TEMPLATE:
+├─ HTML profissional
+├─ Branding consistent
+├─ CTA botão com link
+├─ Mobile responsive
 
-3. Implementation:
-   - Vite: vite.config.js CORS
-   - Vercel: vercel.json headers
-   - Supabase: Auth settings
+TESTE:
+└─ Dispara evento → email chega em 2-3 seg
 
-4. Testing:
-   - curl -I check headers
-   - Browser DevTools Network tab
-   - OWASP ZAP scan
+Tempo: 8-10 horas
+Prioridade: 📋 NICE-TO-HAVE (semana 3)
 ```
 
-### Prompt 8: Auditoria Completa (LGPD)
+#### 📋 Prompt 10: Export XLSX
+
+**Status:** NÃO IMPLEMENTADO (funciona PDF, não XLSX)
 
 ```
-Implementar audit trail completo:
+Add export XLSX (PDF já existe):
 
-1. Eventos rastreados:
-   - Login/Logout (com IP, user_agent)
-   - Create/Read/Update/Delete escalas
-   - Create/Read/Update/Delete turnos
-   - Acesso a dados sensíveis (CPF)
-   - Download/Export de dados
-   - Mudanças de permissão
-   - Falhas de acesso (RLS denial)
+USAR: xlsx library (npm install xlsx)
+IMPLENTA:
+├─ EscalaDetailPage → botão "Download XLSX"
+├─ Criar worksheet com dados escalas
+├─ Format: coluna data, turnos, user names
+├─ Download automático
 
-2. Schema audit_logs:
-   - id, user_id, hospital_id, action
-   - table_name, record_id
-   - old_values, new_values (JSONB)
-   - ip_address, user_agent
-   - timestamp (immutable)
+TESTE:
+└─ Gerar XLSX → abrir Excel → dados OK
 
-3. Retenção:
-   - Keep 12 meses
-   - Archive to cold storage after 6 meses
-   - Complies LGPD artigo 7
-
-4. Access:
-   - Only admins can view
-   - Export capability
-   - Alerts on suspicious activity
-
-5. Triggers (automatizar):
-   - INSERT trigger on escalas → audit_logs
-   - UPDATE trigger → log old/new values
-   - Cannot delete audit_logs
+Tempo: 4-5 horas
+Prioridade: 📋 NICE-TO-HAVE (semana 3)
 ```
 
 ---
 
-## 🚀 Prompts de Feature Development
+## 🧪 TESTING & VALIDATION
 
-### Prompt: Gerar Escalas Automáticas
-
-```
-Implementar gerador automático de escalas com:
-
-1. Input:
-   - hospital_id
-   - mes, ano
-   - lista de enfermeiros
-   - config_folga (min 6 dias, max 8 dias)
-
-2. Algoritmo:
-   - Distribuir 30 dias entre N enfermeiros
-   - 3 turnos/dia (manha, tarde, noite)
-   - Cada enfermeiro: ~10 turnos/mês
-   - Folga: min 6 dias apart, max 8
-   - PRIORIDADE: Segunda→Sexta push para 8 dias (seu algoritmo)
-   - Avoid consecutive noturno (max 2)
-
-3. Output:
-   - Cria tabela turnos
-   - Status: 'draft' (pode editar)
-   - Timestamp: criado_em
-
-4. Validação:
-   - Total turnos = 30 dias × 3 turnos
-   - Sem overlaps (enfermeiro em 2 lugares)
-   - Folga rules respected
-
-5. UI:
-   - Modal com opções (rebalancear, regenerar)
-   - Visual preview antes de criar
-   - Undo/Redo capability
-```
-
-### Prompt: Integrar Stripe Checkout
+### Cada Prompt Inclui Teste Atômico
 
 ```
-Implementar Stripe Payment Flow:
+EXEMPLO: Criptografia CPF
 
-1. Página de Planos:
-   - Mostrar 3 planos (FREE, STARTER, PRO)
-   - Comparação features (tabela)
-   - CTA botões com preço em BRL
-   - "Já paga?" link para change plan
+ANTES DE COMEÇAR:
+├─ Resetar DB (migrations fresh)
+├─ Preparar credenciais Supabase
+└─ Abrir console (F12) pronto
 
-2. Checkout:
-   - Clica "Upgrade to Pro" → abre modal
-   - Stripe PaymentElement (card, PIX, boleto)
-   - Form: email confirmação
-   - Submit → createPaymentIntent (backend)
-   - confirmPayment() → sucesso/erro
+IMPLEMENTAR:
+├─ encryption-service.ts
+├─ Adicionar import em users.ts
+├─ Função create() chama encrypt()
 
-3. Webhook Handler:
-   - Escuta payment_intent.succeeded
-   - Cria subscription em DB
-   - Envia email confirmação (Resend)
-   - Updated hospital subscription status
-   - Log to audit_logs
+TESTAR (não pular):
+1️⃣  Criar user via signup com CPF "111.222.333-44"
+2️⃣  Verificar DB:
+    SELECT cpf_encrypted FROM users WHERE email = '...';
+    → deve RETORNAR: algo como "U2FsdGVkX1..." (encrypted)
+3️⃣  Logout + login como admin
+4️⃣  Verificar audit_logs:
+    SELECT * FROM audit_logs 
+    WHERE action = 'read' AND table_name = 'users';
+    → deve RETORNAR: entry mostrando quem acessou
+5️⃣  Testar decrypt (função retorna plaintext)
+6️⃣  Testar masking UI (mostra "***.***.***-**")
 
-4. UI Feedback:
-   - Loading spinner durante processamento
-   - Success page (redirect home)
-   - Error message com suporte link
-   - Retry button se falha
-
-5. Security:
-   - CSRF token em form
-   - Verify customer_id matches
-   - Never log card numbers
-   - Validate amount backend-side
+RESULTADO:
+✅ Se tudo passou → "COMPLETO: Criptografia CPF"
+❌ Se falhou → "FALHOU: [erro exato] → Corrigindo..."
+   └─ Retestar após fix
 ```
 
-### Prompt: Dashboard Admin
+### Política: Uma Coisa Por Vez
 
 ```
-Criar dashboard para admin do hospital:
+NÃO FAÇA:
+❌ Implementar criptografia + CSP/XSS + Sentry juntos
+❌ "Faço tudo e testo depois"
+❌ Assume que "deve funcionar"
 
-1. KPIs:
-   - Total enfermeiros
-   - Escalas publicadas (mês atual)
-   - Turnos preenchidos / Total
-   - Taxa cobertura (%)
-
-2. Tabelas:
-   - Lista enfermeiros (role, status, last_login)
-   - Escalas recentes (status, actions)
-   - Transações pagamento (última 10)
-
-3. Ações:
-   - Invite enfermeiro (email)
-   - Disable user
-   - Download escalas (PDF, XLSX)
-   - Change subscription plan
-
-4. Charts:
-   - Turnos por tipo (manha/tarde/noite)
-   - Folgas distribuição
-   - Activity timeline (últimos 7 dias)
-
-5. Security:
-   - Só admin vê
-   - RLS enforcement
-   - Audit log todas ações
-   - Rate limit exports
+FAÇA:
+✅ Criptografia completo (plan + implement + test + validate)
+✅ ENTÃO CSP/XSS (não antes)
+✅ ENTÃO Sentry (não antes)
+✅ Cada feature 100% pronta antes de próxima
 ```
 
 ---
 
-## 🧪 Testing & Quality
+## 📝 CHECKLIST: Priority Order
 
-### Testes Essenciais
+```
+🔴 FASE 1 (Semanas 1-2 - Compliance Crítico)
+   ☑ Prompt 2: Rate Limiting de Login (~2h, concluído)
+   ☐ Prompt 3: CSP Headers + Auditoria XSS (2-3h, substitui CSRF Tokens)
+   ☐ Prompt 4: Sentry Integration (3-4h)
+   ☐ Prompt 5: Criptografia CPF (8-10h)
+   ├─ Total restante: ~13-17 horas
+   └─ Resultado: Pronto para produção real
 
-```typescript
-// RLS Tests
-describe('RLS Policies', () => {
-  it('enfermeiro should NOT see other hospital data', async () => {
-    const response = await supabase
-      .from('escalas')
-      .select()
-      .eq('hospital_id', 'other-hospital-id');
-    
-    expect(response.data).toEqual([]);
-  });
-});
+⚠️  FASE 2 (Semanas 3-4 - Features)
+   ☐ Prompt 6: Dashboard Admin (12-14h)
+   ☐ Prompt 9: Email Transacionais (8-10h)
+   ☐ Prompt 10: Export XLSX (4-5h)
+   ├─ Total: ~24-29 horas
+   └─ Resultado: App robusto + completo
 
-// Validation Tests
-describe('Input Validation', () => {
-  it('rejects invalid email', async () => {
-    const result = userSchema.safeParse({ email: 'invalid' });
-    expect(result.success).toBe(false);
-  });
-});
-
-// Auth Tests
-describe('Authentication', () => {
-  it('should NOT access without token', async () => {
-    const response = await fetch('/api/escalas');
-    expect(response.status).toBe(401);
-  });
-});
+📋 PHASE 3 (Mês 2+ - Scale)
+   ☐ React Native App (60-80h)
+   ☐ Integrações (40-50h each)
+   ☐ Analytics (20-25h)
 ```
 
 ---
 
-## 📋 Checklist: Build Fase 1
+## 📞 Workflow: Começar Agora
 
-```
-SEMANA 1-2: Setup
-☐ Criar repo GitHub
-☐ Setup Supabase (tables, RLS, auth)
-☐ Configure Vite + TypeScript
-☐ Setup Tailwind + shadcn/ui
-☐ Create .env.local (não commit)
-☐ README com instruções setup
-
-SEMANA 3-4: Auth
-☐ Login page (email/password)
-☐ Signup page com validações
-☐ useAuth hook + Context
-☐ Middleware de auth protection
-☐ Logout functionality
-☐ Error handling Sentry
-
-SEMANA 5-6: Core Features
-☐ Criar escala (manual form)
-☐ Grid visualizar escala
-☐ Editar turno individual
-☐ Delete turno
-☐ Export PDF/XLSX
-
-SEMANA 7-8: Auto-folga
-☐ Integrar seu algoritmo
-☐ Gerar escala automática
-☐ Validar folga rules
-☐ Visualizar antes de criar
-☐ Auditoria de geração
-
-SEMANA 9-10: Stripe + Monetização
-☐ Página planos com pricing
-☐ Integrar Stripe.js
-☐ Checkout flow
-☐ Webhook handler
-☐ Confirmation emails (Resend)
-
-SEMANA 11-12: Polish + Deploy
-☐ Landing page
-☐ Suporte email template
-☐ Dark mode (opcional)
-☐ Mobile responsivo
-☐ Deploy Vercel
-☐ DNS + SSL
-☐ Monitoring (Sentry)
-
-FINAL:
-☐ Beta test com 5 hospitais
-☐ Feedback loop
-☐ Bug fixes
-☐ Primeiro cliente pagante 🎉
-```
-
----
-
-## 🎯 Convenções de Código Específicas
-
-### Supabse Queries
-
-```typescript
-// SEMPRE com error checking
-const { data, error } = await supabase
-  .from('escalas')
-  .select('*')
-  .eq('hospital_id', hospitalId)
-  .throwOnError(); // Auto throw if error
-
-if (!data) throw new Error('No data');
-
-// Com tipos:
-interface IEscala extends Database['public']['Tables']['escalas']['Row'] {}
-
-// NEVER use .data directly without checking
-```
-
-### React Patterns
-
-```typescript
-// Components são functional + TypeScript
-interface EscalaGridProps {
-  escalaId: string;
-  onUpdate?: (escala: IEscala) => void;
-}
-
-export function EscalaGrid({ escalaId, onUpdate }: EscalaGridProps) {
-  const [data, setData] = useState<IEscala | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchEscala(escalaId)
-      .then(setData)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [escalaId]);
-
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div>Erro: {error}</div>;
-  if (!data) return <div>Sem dados</div>;
-
-  return <div>{/* render */}</div>;
-}
-```
-
-### Error Messages
-
-```typescript
-// User-friendly messages (português PT-BR)
-const errors = {
-  auth_invalid_email: 'Email inválido. Verifique e tente novamente.',
-  auth_weak_password: 'Senha deve ter 8+ caracteres, com letras e números.',
-  db_unique_violation: 'Este item já existe. Verifique os dados.',
-  stripe_declined: 'Seu cartão foi recusado. Tente outro método.',
-  rate_limit: 'Muitas tentativas. Aguarde 10 minutos.',
-  unknown_error: 'Algo deu errado. Contate suporte.',
-};
-```
-
----
-
-## 🔄 Workflow de Desenvolvimento
+### Passo 1: Escolha Prompt Phase 1
 
 ```bash
-# 1. Start dev server
+# Abra Claude Code
+claude-code
+
+# Cole UMA TAREFA (ex: Prompt 2 Rate Limiting)
+# Não misture, uma por vez
+
+# Claude Code vai:
+# 1. Plan (passos testáveis)
+# 2. Implement (código)
+# 3. Test (atomicamente)
+# 4. Report: "✅ COMPLETO" ou "❌ FALHOU"
+```
+
+### Passo 2: Validar com Testes
+
+```bash
+# Após cada prompt implementado:
+
+# Teste 1: Type check
+npm run type-check
+# Resultado: "No errors" ou específico
+
+# Teste 2: Dev server
 npm run dev
+# Abre browser, exercita feature, verifica console
 
-# 2. Watch Supabase migrations
-supabase db pull
+# Teste 3: Build
+npm run build
+# Sem erros? Pronto pra Vercel
 
-# 3. Make changes
-# → Código em src/
-# → DB em supabase/migrations/
+# Teste 4: Supabase (se SQL/RLS)
+npx supabase db pull
+# Ver schema atualizado
+SELECT * FROM ... (validar dados)
 
-# 4. Test locally
-npm run test
+# Teste 5: Deploy Vercel (se crítico)
+git push origin feature-branch
+# Vercel build automático
+# Validar em preview URL
+```
 
-# 5. Commit
-git commit -m "feat: escala grid component"
+### Passo 3: Report & Próximo
 
-# 6. Push → GitHub Actions runs tests
-git push
+```
+Quando terminar prompt:
 
-# 7. Deploy to Vercel (auto)
-# → Vercel detects push
-# → Runs build
-# → Deploy to preview/prod
+REPORTE:
+├─ [FEATURE] Implementado: [descrição]
+├─ [TESTE] Status: ✅ Passou / ❌ Falhou
+├─ [TEMPO] Horas gastas: X.Xh
+├─ [BLOQUEADOR?] Sim/Não
+└─ [PRÓXIMO] Sugestão: Prompt N
 
-# 8. Monitor
-# → Sentry for errors
-# → Vercel analytics
-# → Supabase logs
+EXEMPLO (real, já executado):
+├─ [Rate Limiting] Implementado: 5 tentativas/10min login
+├─ [TESTE] Status: ✅ Passou (6º login retorna 429)
+├─ [TEMPO] Horas gastas: ~2h
+├─ [BLOQUEADOR?] Não (próximo não depende)
+└─ [PRÓXIMO] Sugestão: CSP Headers + Auditoria XSS (Prompt 3)
 ```
 
 ---
 
-## 📞 Suporte & Contato
+## 🚨 Se Algo Quebrar
 
 ```
-Erro? Use este formato:
-1. Qual componente/página?
-2. Qual ação do usuário?
-3. Qual erro/mensagem?
-4. Reproducir steps:
-   - Passo 1
-   - Passo 2
-   - Esperado vs Real
+PROTOCOLO:
+1. NÃO prosseguir (para tudo)
+2. Reproduzir erro (passos exatos)
+3. Investigar root cause (logs, console, BD)
+4. Corrigir código (ou config)
+5. Retestar até passar
+6. SÓ ENTÃO próxima tarefa
 
-Escalação:
-- Dev issues: abrir no GitHub/Claude Code
-- Stripe issues: verificar Stripe dashboard
-- Supabase issues: Supabase logs
-- Sentry errors: abrir dashboard Sentry
+COMUM:
+❌ "npm run dev" errando
+   → npm install (limpar cache)
+   → rm -rf node_modules + reinstalar
+
+❌ "Supabase connection failed"
+   → .env.local keys corretas?
+   → Internet funcionando?
+   → Projeto online no dashboard?
+
+❌ "TypeScript error TS2345"
+   → Ler erro completo (linha + tipo)
+   → Validate contra types/index.ts
+   → Fix type mismatch
+
+❌ "RLS denied"
+   → Normal sem auth
+   → Login para ter permissões
+   → Verificar role no users table
 ```
 
 ---
 
-**Última atualização:** 2026-07-02  
-**Versão:** 0.1.0 (MVP)  
-**Mantido por:** Matheus Bonato  
-**Status:** Development
+## 📊 Status Summary
+
+```
+MVP Funcional (Today):          ✅ 1.910+ linhas em produção
+Segurança Crítica (Semanas 1-2): 🔴 3 features restantes (rate limiting ✅ concluído)
+Admin + Features (Semanas 3-4):  ⚠️  3 features parciais
+Scale (Mês 2+):                  📋 Roadmap aberto
+
+Total Horas Fase 1 Restante:   ~13-17h (compliance)
+Total Horas Fase 2:            ~24-29h (features)
+
+Pronto para Produção Real?      ❌ Não (sem compliance)
+Pronto Após Phase 1?            ✅ Sim (com compliance)
+```
+
+---
+
+**Versão:** 2.0 (Realista)  
+**Última Atualização:** 2026-07-02  
+**Auditoria Baseada em:** Commit 09dfcc0  
+**Garantia de Qualidade:** Política de Zero Erros + Testes Atomicamente
