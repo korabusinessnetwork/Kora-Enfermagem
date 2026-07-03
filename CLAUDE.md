@@ -492,16 +492,18 @@ TAREFA 2: Rate Limiting de Login ✅ CONCLUÍDO
 └─ Bug encontrado no processo: ver Problema 8 (supabase.functions.invoke
    esconde corpo de erro em respostas não-2xx)
 
-TAREFA 3: CSP Headers + Auditoria XSS (substituiu CSRF Tokens)
+TAREFA 3: CSP Headers + Auditoria XSS ✅ CONCLUÍDO (substituiu CSRF Tokens)
 ├─ DECISÃO: CSRF tokens descartados — Bearer JWT em localStorage não é
 │  vulnerável ao ataque clássico que CSRF previne (exige cookie ambiente)
-├─ Implementar: Content-Security-Policy header (Vercel) + revisão de todo
-│  ponto que renderiza dado do usuário sem sanitização
-├─ Teste:
-│  └─ Header CSP presente na resposta (curl -I)
-│  └─ Tentativa de injeção em campo de texto não executa
-└─ Tempo: 2-3 horas
-└─ Status: 📋 Pendente
+├─ Auditoria: sem dangerouslySetInnerHTML, innerHTML, eval, style inline
+│  via prop, ou target=_blank sem rel=noopener em todo src/
+├─ Implementado: vercel.json com CSP restritivo (sem unsafe-inline — build
+│  de produção não usa <script>/<style> inline) + X-Content-Type-Options,
+│  X-Frame-Options, Referrer-Policy
+├─ Testado em produção (não só local — CSP é config de servidor):
+│  └─ curl -I confirma header presente
+│  └─ Fluxo completo (login → escalas → checkout Stripe) sem violação de CSP
+└─ Tempo real: ~30min (vs. 2-3h estimadas)
 
 TAREFA 4: Sentry Integration
 ├─ Setup: sentry.init() no main.tsx
@@ -513,8 +515,8 @@ TAREFA 4: Sentry Integration
 └─ Tempo: 3-4 horas
 └─ Status: 🔴 CRÍTICO (monitoring)
 
-TOTAL PHASE 1 RESTANTE: ~13-17 horas (CPF 8-10h + CSP/XSS 2-3h + Sentry 3-4h)
-JÁ CONCLUÍDO: Rate Limiting de Login (Tarefa 2)
+TOTAL PHASE 1 RESTANTE: ~11-14 horas (CPF 8-10h + Sentry 3-4h)
+JÁ CONCLUÍDO: Rate Limiting de Login (Tarefa 2), CSP/XSS (Tarefa 3)
 RESULTADO: Pronto para produção real com dados sensíveis
 ```
 
@@ -639,9 +641,9 @@ Bug encontrado durante implementação: ver Problema 8 no changelog
 Tempo real: ~2h (vs. 5-6h estimadas)
 ```
 
-#### ⚪ Prompt 3: CSP Headers & Auditoria XSS (substitui CSRF Tokens)
+#### ✅ Prompt 3: CSP Headers & Auditoria XSS (substitui CSRF Tokens)
 
-**Status:** NÃO IMPLEMENTADO (pendente — CSRF tokens descartados por decisão)
+**Status:** IMPLEMENTADO
 
 ```
 DECISÃO DE ARQUITETURA: CSRF tokens não fazem sentido aqui.
@@ -652,17 +654,21 @@ guardado em localStorage, enviado explicitamente no header Authorization.
 Um site malicioso não tem acesso a esse token sem já ter comprometido
 a página via XSS — nesse ponto CSRF é irrelevante, XSS é o problema real.
 
-FAZER EM VEZ DISSO:
-1. Content-Security-Policy header (via vercel.json ou meta tag)
-2. Auditoria: todo ponto que renderiza dado do usuário sem sanitização
-3. Confirmar que não há dangerouslySetInnerHTML sem DOMPurify
+FEITO:
+✅ Auditoria: zero dangerouslySetInnerHTML/innerHTML/eval em src/, zero
+   style inline via prop, zero target=_blank sem rel=noopener
+✅ Content-Security-Policy via vercel.json — sem unsafe-inline (build de
+   produção não tem <script>/<style> inline, então não precisou)
+✅ X-Content-Type-Options: nosniff, X-Frame-Options: DENY,
+   Referrer-Policy: strict-origin-when-cross-origin
 
-Teste:
-├─ curl -I → header CSP presente
-└─ Tentativa de injeção em campo de texto não executa
+Testado em produção (headers só existem no servidor Vercel, não em
+vite dev local):
+├─ curl -I https://kora-enfermagem.vercel.app/ → CSP presente
+└─ Fluxo completo (login → escalas → checkout Stripe) sem violação de
+   CSP nem regressão — connect-src liberado só pro domínio do Supabase
 
-Tempo: 2-3 horas
-Prioridade: 📋 Pendente (risco real menor que os itens 🔴)
+Tempo real: ~30min (vs. 2-3h estimadas)
 ```
 
 #### 🔴 Prompt 4: Sentry Error Tracking
@@ -913,10 +919,10 @@ FAÇA:
 ```
 🔴 FASE 1 (Semanas 1-2 - Compliance Crítico)
    ☑ Prompt 2: Rate Limiting de Login (~2h, concluído)
-   ☐ Prompt 3: CSP Headers + Auditoria XSS (2-3h, substitui CSRF Tokens)
+   ☑ Prompt 3: CSP Headers + Auditoria XSS (~30min, concluído, substitui CSRF Tokens)
    ☐ Prompt 4: Sentry Integration (3-4h)
    ☐ Prompt 5: Criptografia CPF (8-10h)
-   ├─ Total restante: ~13-17 horas
+   ├─ Total restante: ~11-14 horas
    └─ Resultado: Pronto para produção real
 
 ⚠️  FASE 2 (Semanas 3-4 - Features)
@@ -1040,11 +1046,11 @@ COMUM:
 
 ```
 MVP Funcional (Today):          ✅ 1.910+ linhas em produção
-Segurança Crítica (Semanas 1-2): 🔴 3 features restantes (rate limiting ✅ concluído)
+Segurança Crítica (Semanas 1-2): 🔴 2 features restantes (rate limiting + CSP/XSS ✅ concluídos)
 Admin + Features (Semanas 3-4):  ⚠️  3 features parciais
 Scale (Mês 2+):                  📋 Roadmap aberto
 
-Total Horas Fase 1 Restante:   ~13-17h (compliance)
+Total Horas Fase 1 Restante:   ~11-14h (compliance)
 Total Horas Fase 2:            ~24-29h (features)
 
 Pronto para Produção Real?      ❌ Não (sem compliance)
