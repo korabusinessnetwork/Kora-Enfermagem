@@ -1,5 +1,6 @@
 import { AuthError, FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { addSentryBreadcrumb, clearSentryUser, setSentryUser } from './sentry';
 import type { IUser } from '../types';
 
 const errorMessages: Record<string, string> = {
@@ -102,6 +103,9 @@ export async function login(email: string, password: string): Promise<IUser> {
 
   await logAudit(profile.id, profile.hospital_id, 'login');
 
+  setSentryUser(profile.id, profile.hospital_id);
+  addSentryBreadcrumb('Usuário fez login', 'auth');
+
   return profile;
 }
 
@@ -129,6 +133,8 @@ export async function signup(
   }
 
   const profile = await fetchUserProfile(data.user.id);
+  setSentryUser(profile.id, profile.hospital_id);
+  addSentryBreadcrumb('Usuário criou conta', 'auth');
   return { needsEmailConfirmation: false, user: profile };
 }
 
@@ -138,4 +144,7 @@ export async function logout(user: IUser | null): Promise<void> {
   }
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(`DB Error: ${error.message}`);
+
+  addSentryBreadcrumb('Usuário fez logout', 'auth');
+  clearSentryUser();
 }
